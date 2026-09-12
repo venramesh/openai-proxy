@@ -1,3 +1,9 @@
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(req, res) {
   const path = req.query.path || '';
   const targetUrl = 'https://api.openai.com/' + (Array.isArray(path) ? path.join('/') : path);
@@ -9,13 +15,14 @@ export default async function handler(req, res) {
   const response = await fetch(targetUrl, {
     method: req.method,
     headers: headers,
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? req : undefined,
+    duplex: 'half',
   });
 
-  const data = await response.text();
+  const data = await response.arrayBuffer();
   res.status(response.status);
   response.headers.forEach((value, key) => {
     if (key.toLowerCase() !== 'content-encoding') res.setHeader(key, value);
   });
-  res.send(data);
+  res.send(Buffer.from(data));
 }
